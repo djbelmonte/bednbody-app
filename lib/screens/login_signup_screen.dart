@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'client_home.dart';
 import 'lawyer_home.dart';
+import 'lawyer_details_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -73,7 +74,7 @@ class _AuthScreenState extends State<AuthScreen> {
         } else {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const LawyerHomeScreen()),
+            MaterialPageRoute(builder: (_) => const LawyerDetailsScreen()),
           );
         }
       }
