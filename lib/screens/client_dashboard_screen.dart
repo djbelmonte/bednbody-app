@@ -150,38 +150,55 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
       );
     }
 
-    final lawyerName = [_consultation!['first_name'],
-                        _consultation!['middle_name'],
-                        _consultation!['last_name'],
-                      ].where((part) => part != null && part.toString().trim().isNotEmpty).join(' ');
-    final notes = _consultation!['notes'] ?? '';
-    final consultationTime = (_consultation!['consultation_time'] as Timestamp).toDate();
-    final formattedTime = DateFormat.yMMMMd().add_jm().format(consultationTime);
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance
+          .collection('users')
+          .doc(_consultation!['lawyer']) // assuming this is the UID string
+          .get(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("Upcoming Consultation", style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Text("With Atty. $lawyerName"),
-            Text("Scheduled on $formattedTime"),
-            Text("Time remaining: ${_formatDuration(_timeRemaining)}"),
-            const SizedBox(height: 8),
-            Text(
-              "Notes: $notes",
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+        final lawyerData = snapshot.data!.data() as Map<String, dynamic>;
+        final lawyerName = [
+          lawyerData['first_name'],
+          lawyerData['middle_name'],
+          lawyerData['last_name'],
+        ].where((part) => part != null && part.toString().trim().isNotEmpty).join(' ');
+
+        final notes = _consultation!['notes'] ?? '';
+        final consultationTime = (_consultation!['consultation_time'] as Timestamp).toDate();
+        final formattedTime = DateFormat.yMMMMd().add_jm().format(consultationTime);
+
+        return Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("Upcoming Consultation", style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Text("With Atty. $lawyerName"),
+                Text("Scheduled on $formattedTime"),
+                Text("Time remaining: ${_formatDuration(_timeRemaining)}"),
+                const SizedBox(height: 8),
+                Text(
+                  "Notes: $notes",
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
+
+
 
   @override
   void dispose() {

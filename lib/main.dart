@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'screens/login_signup_screen.dart';
-import 'screens/utils/seed_law_specializations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'lawyer_home.dart';
+import 'utils/confirmation_dialog.dart';
 
 class LawyerDetailsScreen extends StatefulWidget {
   const LawyerDetailsScreen({super.key});
@@ -134,7 +135,12 @@ class _LawyerDetailsScreenState extends State<LawyerDetailsScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _submitDetails,
+                    onPressed: () async {
+                      final confirmed = await showConfirmationDialog(context);
+                      if (confirmed) {
+                        _submitDetails();
+                      }
+                    },
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       textStyle: const TextStyle(fontSize: 16),

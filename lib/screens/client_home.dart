@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'client_dashboard_screen.dart';
-// import 'client_profile_screen.dart';
+import 'client_profile_screen.dart';
+import 'login_signup_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ClientHomeScreen extends StatefulWidget {
   const ClientHomeScreen({super.key});
@@ -14,7 +16,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
 
   final List<Widget> _screens = [
     const ClientDashboardScreen(),
-    // const ClientProfileScreen(),
+    const ClientProfileScreen(),
   ];
 
   final List<String> _titles = [
@@ -33,6 +35,20 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_titles[_selectedIndex]),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: "Log out",
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              if (!context.mounted) return;
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const AuthScreen()),
+              );
+            },
+          ),
+        ],
       ),
       body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
