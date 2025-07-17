@@ -1,26 +1,26 @@
 import 'package:flutter/material.dart';
-import 'lawyer_dashboard_screen.dart';
-import 'lawyer_profile_screen.dart';
+import 'therapist_dashboard_screen.dart';
+import 'therapist_profile_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'login_signup_screen.dart';
-// import 'lawyer_bookings_screen.dart';
-// import 'lawyer_session_screen.dart';
+// import 'therapist_bookings_screen.dart';
+// import 'therapist_session_screen.dart';
 
-class LawyerHomeScreen extends StatefulWidget {
-  const LawyerHomeScreen({super.key});
+class TherapistHomeScreen extends StatefulWidget {
+  const TherapistHomeScreen({super.key});
 
   @override
-  State<LawyerHomeScreen> createState() => _LawyerHomeScreenState();
+  State<TherapistHomeScreen> createState() => _TherapistHomeScreenState();
 }
 
-class _LawyerHomeScreenState extends State<LawyerHomeScreen> {
+class _TherapistHomeScreenState extends State<TherapistHomeScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _screens = [
-    const LawyerDashboardScreen(),
-    const LawyerProfileScreen(),
-    // const LawyerBookingsScreen(),
-    // const LawyerSessionScreen(),
+    const TherapistDashboardScreen(),
+    const TherapistProfileScreen(),
+    // const TherapistBookingsScreen(),
+    // const TherapistSessionScreen(),
   ];
 
   final List<String> _titles = [

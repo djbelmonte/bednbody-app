@@ -3,13 +3,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class ConsultationBookingScreen extends StatefulWidget {
-  final String lawyerId;
-  final String lawyerName;
+  final String therapistId;
+  final String therapistName;
 
   const ConsultationBookingScreen({
     super.key,
-    required this.lawyerId,
-    required this.lawyerName,
+    required this.therapistId,
+    required this.therapistName,
   });
 
   @override
@@ -27,7 +27,7 @@ class _ConsultationBookingScreenState extends State<ConsultationBookingScreen> {
 
     await FirebaseFirestore.instance.collection('consultations').add({
       'client': clientId,
-      'lawyer': widget.lawyerId,
+      'therapist': widget.therapistId,
       'consultation_time': _selectedDateTime,
       'notes': _notesController.text.trim(),
       'created_at': FieldValue.serverTimestamp(),  
@@ -80,7 +80,7 @@ class _ConsultationBookingScreenState extends State<ConsultationBookingScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "You are booking a consultation with Atty ${widget.lawyerName}",
+              "You are booking a consultation with Atty ${widget.therapistName}",
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 20),

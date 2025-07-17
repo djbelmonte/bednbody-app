@@ -3,8 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'client_home.dart';
-import 'lawyer_home.dart';
-import 'lawyer_details_screen.dart';
+import 'therapist_home.dart';
+import 'therapist_details_screen.dart';
 import 'client_details_screen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -48,7 +48,7 @@ class _AuthScreenState extends State<AuthScreen> {
         } else {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const LawyerHomeScreen()),
+            MaterialPageRoute(builder: (_) => const TherapistHomeScreen()),
           );
         }
       } else {
@@ -75,7 +75,7 @@ class _AuthScreenState extends State<AuthScreen> {
         } else {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const LawyerDetailsScreen()),
+            MaterialPageRoute(builder: (_) => const TherapistDetailsScreen()),
           );
         }
       }
@@ -90,82 +90,111 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
 
     return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Icon(Icons.gavel, size: 64, color: color.primary),
-              const SizedBox(height: 16),
-              Text(
-                _isLogin ? "Welcome Back" : "Create an Account",
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: color.primary,
-                    ),
-              ),
-              const SizedBox(height: 32),
-              TextField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: "Email",
-                  prefixIcon: Icon(Icons.email),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        color: const Color(0xFF1C3A32), // Bednbody dark green
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Image.asset(
+                  'assets/logo.png',
+                  height: 250,
                 ),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: "Password",
-                  prefixIcon: Icon(Icons.lock),
-                ),
-                obscureText: true,
-              ),
-              if (!_isLogin) ...[
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: _selectedRole,
-                  decoration: const InputDecoration(
-                    labelText: "Select Role",
-                    prefixIcon: Icon(Icons.person),
+                Text(
+                  _isLogin ? "Welcome Back" : "Create an Account",
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    color: const Color(0xFFFFD700),
+                    fontWeight: FontWeight.bold,
                   ),
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() => _selectedRole = val);
-                    }
+                ),
+                const SizedBox(height: 32),
+                TextField(
+                  controller: _emailController,
+                  style: const TextStyle(color: Colors.black),
+                  decoration: const InputDecoration(
+                    labelText: "Email",
+                    labelStyle: TextStyle(color: Colors.black),
+                    prefixIcon: Icon(Icons.email, color: Colors.black),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _passwordController,
+                  style: const TextStyle(color: Colors.black),
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: "Password",
+                    labelStyle: TextStyle(color: Colors.black),
+                    prefixIcon: Icon(Icons.lock, color: Colors.black),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                ),
+                if (!_isLogin) ...[
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: _selectedRole,
+                    iconEnabledColor: Colors.black,
+                    dropdownColor: Colors.white,
+                    style: const TextStyle(color: Colors.black),
+                    decoration: const InputDecoration(
+                      labelText: "Select Role",
+                      labelStyle: TextStyle(color: Colors.black),
+                      prefixIcon: Icon(Icons.person, color: Colors.black),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() => _selectedRole = val);
+                      }
+                    },
+                    items: const [
+                      DropdownMenuItem(
+                          value: "client", child: Text("Client")),
+                      DropdownMenuItem(
+                          value: "therapist", child: Text("Therapist")),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 24),
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ElevatedButton(
+                        onPressed: _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFFD700), // gold
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          textStyle: const TextStyle(fontSize: 16),
+                        ),
+                        child: Text(_isLogin ? "Login" : "Sign Up"),
+                      ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () {
+                    setState(() => _isLogin = !_isLogin);
                   },
-                  items: const [
-                    DropdownMenuItem(value: "client", child: Text("Client")),
-                    DropdownMenuItem(value: "lawyer", child: Text("Lawyer")),
-                  ],
+                  child: Text(
+                    _isLogin
+                        ? "Don't have an account? Sign Up"
+                        : "Already have an account? Login",
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
-              const SizedBox(height: 24),
-              _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ElevatedButton(
-                      onPressed: _submit,
-                      child: Text(_isLogin ? "Login" : "Sign Up"),
-                    ),
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: () {
-                  setState(() => _isLogin = !_isLogin);
-                },
-                child: Text(
-                  _isLogin
-                      ? "Don't have an account? Sign Up"
-                      : "Already have an account? Login",
-                  style: TextStyle(color: color.primary),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

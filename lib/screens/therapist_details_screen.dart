@@ -2,17 +2,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import 'lawyer_home.dart';
+import 'therapist_home.dart';
 import 'utils/confirmation_dialog.dart';
 
-class LawyerDetailsScreen extends StatefulWidget {
-  const LawyerDetailsScreen({super.key});
+class TherapistDetailsScreen extends StatefulWidget {
+  const TherapistDetailsScreen({super.key});
 
   @override
-  State<LawyerDetailsScreen> createState() => _LawyerDetailsScreenState();
+  State<TherapistDetailsScreen> createState() => _TherapistDetailsScreenState();
 }
 
-class _LawyerDetailsScreenState extends State<LawyerDetailsScreen> {
+class _TherapistDetailsScreenState extends State<TherapistDetailsScreen> {
   final _firstNameController = TextEditingController();
   final _middleNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -20,30 +20,6 @@ class _LawyerDetailsScreenState extends State<LawyerDetailsScreen> {
 
   DateTime? _selectedDate;
   String? _yearGraduated;
-  List<String> _selectedSpecializations = [];
-  List<Map<String, dynamic>> _allSpecializations = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchSpecializations();
-  }
-
-  Future<void> _fetchSpecializations() async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('law_specializations')
-        .get();
-
-    setState(() {
-      _allSpecializations = snapshot.docs
-          .map((doc) => {
-                'id': doc.id,
-                'name': doc['name'],
-                'description': doc['description']
-              })
-          .toList();
-    });
-  }
 
   Future<void> _submitDetails() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -56,12 +32,11 @@ class _LawyerDetailsScreenState extends State<LawyerDetailsScreen> {
       'birthday': _selectedDate?.toIso8601String(),
       'address': _addressController.text.trim(),
       'year_graduated': _yearGraduated,
-      'specializations': _selectedSpecializations.toSet().toList(),
     });
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => const LawyerHomeScreen()),
+      MaterialPageRoute(builder: (_) => const TherapistHomeScreen()),
     );
   }
 
@@ -104,32 +79,6 @@ class _LawyerDetailsScreenState extends State<LawyerDetailsScreen> {
                   }).toList(),
                   onChanged: (val) => setState(() => _yearGraduated = val),
                 ),
-                const SizedBox(height: 16),
-                const Text("Specializations", style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                if (_allSpecializations.isEmpty)
-                  const Center(child: CircularProgressIndicator())
-                else
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: _allSpecializations.map((spec) {
-                      final isSelected = _selectedSpecializations.contains(spec['id']);
-                      return FilterChip(
-                        label: Text(spec['name'], style: const TextStyle(fontSize: 13)),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          setState(() {
-                            if (selected) {
-                              _selectedSpecializations.add(spec['id']);
-                            } else {
-                              _selectedSpecializations.remove(spec['id']);
-                            }
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ),
                 const Spacer(),
                 const SizedBox(height: 24),
                 SizedBox(

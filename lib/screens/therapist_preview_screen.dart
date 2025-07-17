@@ -3,58 +3,36 @@ import 'package:flutter/material.dart';
 
 import 'consultation_booking_screen.dart';
 
-class LawyerPreviewScreen extends StatefulWidget {
-  final String lawyerId;
+class TherapistPreviewScreen extends StatefulWidget {
+  final String therapistId;
 
-  const LawyerPreviewScreen({super.key, required this.lawyerId});
+  const TherapistPreviewScreen({super.key, required this.therapistId});
 
   @override
-  State<LawyerPreviewScreen> createState() => _LawyerPreviewScreenState();
+  State<TherapistPreviewScreen> createState() => _TherapistPreviewScreenState();
 }
 
-class _LawyerPreviewScreenState extends State<LawyerPreviewScreen> {
-  Map<String, dynamic>? _lawyerData;
-  List<String> _specializationNames = [];
+class _TherapistPreviewScreenState extends State<TherapistPreviewScreen> {
+  Map<String, dynamic>? _therapistData;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchLawyerDetails();
+    _fetchTherapistDetails();
   }
 
-  Future<void> _fetchLawyerDetails() async {
+  Future<void> _fetchTherapistDetails() async {
     final userDoc = await FirebaseFirestore.instance
         .collection('users')
-        .doc(widget.lawyerId)
+        .doc(widget.therapistId)
         .get();
 
     final userData = userDoc.data();
     if (userData == null) return;
 
-    final List<String> specializationIds =
-        List<String>.from(userData['specializations'] ?? []);
-
-    // Fetch names of specializations
-    final specsSnapshot = await FirebaseFirestore.instance
-        .collection('law_specializations')
-        .get();
-
-    final allSpecs = specsSnapshot.docs
-        .map((doc) => {'id': doc.id, 'name': doc['name']})
-        .toList();
-
-    final names = specializationIds.map((id) {
-      final spec = allSpecs.firstWhere(
-        (s) => s['id'] == id,
-        orElse: () => {'name': 'Unknown'},
-      );
-      return spec['name']!;
-    }).toList();
-
     setState(() {
-      _lawyerData = userData;
-      _specializationNames = List<String>.from(names);
+      _therapistData = userData;
       _isLoading = false;
     });
   }
@@ -75,23 +53,18 @@ class _LawyerPreviewScreenState extends State<LawyerPreviewScreen> {
     }
 
     final fullName =
-        "${_lawyerData?['first_name'] ?? ''} ${_lawyerData?['middle_name'] ?? ''} ${_lawyerData?['last_name'] ?? ''}".trim();
-    final yearGraduated = _lawyerData?['year_graduated'] ?? '';
+        "${_therapistData?['first_name'] ?? ''} ${_therapistData?['middle_name'] ?? ''} ${_therapistData?['last_name'] ?? ''}".trim();
+    final yearGraduated = _therapistData?['year_graduated'] ?? '';
     final yearsExp = _calculateYearsOfExperience(yearGraduated);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Lawyer Preview")),
+      appBar: AppBar(title: const Text("Therapist Preview")),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(fullName,
-                style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 16),
-            const Text("Specializations:",
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            ..._specializationNames.map((spec) => Text("• $spec")),
+            Text(fullName, style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 16),
             Text("Years of Experience: $yearsExp"),
             const Spacer(),
@@ -103,8 +76,8 @@ class _LawyerPreviewScreenState extends State<LawyerPreviewScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (_) => ConsultationBookingScreen(
-                        lawyerId: widget.lawyerId,
-                        lawyerName: fullName,
+                        therapistId: widget.therapistId,
+                        therapistName: fullName,
                       ),
                     ),
                   );

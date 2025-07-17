@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 
-import 'lawyer_preview_screen.dart';
+import 'therapist_preview_screen.dart';
 
 class ClientDashboardScreen extends StatefulWidget {
   const ClientDashboardScreen({super.key});
@@ -15,8 +15,7 @@ class ClientDashboardScreen extends StatefulWidget {
 
 class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<Map<String, dynamic>> _lawyerSuggestions = [];
-  List<Map<String, dynamic>> _specializationSuggestions = [];
+  List<Map<String, dynamic>> _therapistSuggestions = [];
   bool _isLoading = false;
 
   Map<String, dynamic>? _consultation;
@@ -34,8 +33,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
 
     if (search.isEmpty) {
       setState(() {
-        _lawyerSuggestions = [];
-        _specializationSuggestions = [];
+        _therapistSuggestions = [];
         _isLoading = false;
       });
       return;
@@ -43,12 +41,12 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
 
     setState(() => _isLoading = true);
 
-    final lawyerSnapshot = await FirebaseFirestore.instance
+    final therapistSnapshot = await FirebaseFirestore.instance
         .collection('users')
-        .where('role', isEqualTo: 'lawyer')
+        .where('role', isEqualTo: 'therapist')
         .get();
 
-    final lawyers = lawyerSnapshot.docs
+    final therapists = therapistSnapshot.docs
         .map((doc) => {
               'id': doc.id,
               'fullName':
@@ -56,34 +54,17 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
               'displayName':
                   "${doc['first_name']} ${doc['middle_name']} ${doc['last_name']}"
             })
-        .where((lawyer) => lawyer['fullName']!.contains(search))
+        .where((therapist) => therapist['fullName']!.contains(search))
         .toList();
 
-    lawyers.sort((a, b) => a['displayName']!.compareTo(b['displayName']!));
-    final topLawyers = lawyers.take(3).toList();
-
-    final specSnapshot = await FirebaseFirestore.instance
-        .collection('law_specializations')
-        .get();
-
-    final specs = specSnapshot.docs
-        .map((doc) => {
-              'id': doc.id,
-              'name': doc['name'].toString(),
-            })
-        .where((spec) => spec['name']!.toLowerCase().contains(search))
-        .toList();
-
-    specs.sort((a, b) => a['name']!.compareTo(b['name']!));
-    final topSpecs = specs.take(3).toList();
+    therapists.sort((a, b) => a['displayName']!.compareTo(b['displayName']!));
+    final topTherapists = therapists.take(3).toList();
 
     setState(() {
-      _lawyerSuggestions = topLawyers;
-      _specializationSuggestions = topSpecs;
+      _therapistSuggestions = topTherapists;
       _isLoading = false;
     });
   }
-
 
   Future<void> _loadConsultation() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -112,7 +93,6 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
       });
     }
   }
-
 
   void _startCountdown(DateTime consultationTime) {
     _timer?.cancel();
@@ -153,18 +133,18 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     return FutureBuilder<DocumentSnapshot>(
       future: FirebaseFirestore.instance
           .collection('users')
-          .doc(_consultation!['lawyer']) // assuming this is the UID string
+          .doc(_consultation!['therapist']) // assuming this is the UID string
           .get(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final lawyerData = snapshot.data!.data() as Map<String, dynamic>;
-        final lawyerName = [
-          lawyerData['first_name'],
-          lawyerData['middle_name'],
-          lawyerData['last_name'],
+        final therapistData = snapshot.data!.data() as Map<String, dynamic>;
+        final therapistName = [
+          therapistData['first_name'],
+          therapistData['middle_name'],
+          therapistData['last_name'],
         ].where((part) => part != null && part.toString().trim().isNotEmpty).join(' ');
 
         final notes = _consultation!['notes'] ?? '';
@@ -180,7 +160,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
               children: [
                 const Text("Upcoming Consultation", style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                Text("With Atty. $lawyerName"),
+                Text("With Atty. $therapistName"),
                 Text("Scheduled on $formattedTime"),
                 Text("Time remaining: ${_formatDuration(_timeRemaining)}"),
                 const SizedBox(height: 8),
@@ -197,8 +177,6 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
       },
     );
   }
-
-
 
   @override
   void dispose() {
@@ -217,7 +195,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
             controller: _searchController,
             onChanged: _onSearchChanged,
             decoration: InputDecoration(
-              hintText: "Search by lawyer or specialization...",
+              hintText: "Search by therapist...",
               prefixIcon: const Icon(Icons.search),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -231,10 +209,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
 
         if (_isLoading) const CircularProgressIndicator(),
 
-        if (!_isLoading &&
-            _lawyerSuggestions.isEmpty &&
-            _specializationSuggestions.isEmpty &&
-            _searchController.text.isNotEmpty)
+        if (!_isLoading && _therapistSuggestions.isEmpty && _searchController.text.isNotEmpty)
           const Padding(
             padding: EdgeInsets.all(16.0),
             child: Text("No results found."),
@@ -245,31 +220,19 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             children: [
-              if (_lawyerSuggestions.isNotEmpty) ...[
-                const Text("Lawyers", style: TextStyle(fontWeight: FontWeight.bold)),
+              if (_therapistSuggestions.isNotEmpty) ...[
+                const Text("Therapists", style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                ..._lawyerSuggestions.map((lawyer) => ListTile(
+                ..._therapistSuggestions.map((therapist) => ListTile(
                       leading: const Icon(Icons.person),
-                      title: Text(lawyer['displayName']),
+                      title: Text(therapist['displayName']),
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => LawyerPreviewScreen(lawyerId: lawyer['id']),
+                            builder: (_) => TherapistPreviewScreen(therapistId: therapist['id']),
                           ),
                         );
-                      },
-                    )),
-                const SizedBox(height: 16),
-              ],
-              if (_specializationSuggestions.isNotEmpty) ...[
-                const Text("Specializations", style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                ..._specializationSuggestions.map((spec) => ListTile(
-                      leading: const Icon(Icons.gavel),
-                      title: Text(spec['name']),
-                      onTap: () {
-                        // TODO: Filter lawyers by specialization
                       },
                     )),
               ],

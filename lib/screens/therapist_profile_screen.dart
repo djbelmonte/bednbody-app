@@ -4,17 +4,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'utils/snackbar_helper.dart';
 
-class LawyerProfileScreen extends StatefulWidget {
-  const LawyerProfileScreen({super.key});
+class TherapistProfileScreen extends StatefulWidget {
+  const TherapistProfileScreen({super.key});
 
   @override
-  State<LawyerProfileScreen> createState() => _LawyerProfileScreenState();
+  State<TherapistProfileScreen> createState() => _TherapistProfileScreenState();
 }
 
-class _LawyerProfileScreenState extends State<LawyerProfileScreen> {
+class _TherapistProfileScreenState extends State<TherapistProfileScreen> {
   final TextEditingController _addressController = TextEditingController();
-  final List<String> _selectedSpecializations = [];
-  final List<Map<String, dynamic>> _availableSpecializations = [];
 
   String _fullName = '';
   String _email = '';
@@ -25,7 +23,6 @@ class _LawyerProfileScreenState extends State<LawyerProfileScreen> {
   void initState() {
     super.initState();
     _loadProfile();
-    _loadSpecializations();
   }
 
   Future<void> _loadProfile() async {
@@ -44,23 +41,9 @@ class _LawyerProfileScreenState extends State<LawyerProfileScreen> {
       _birthday = data['birthday'] ?? '';
       _yearGraduated = data['year_graduated'] ?? '';
       _addressController.text = data['address'] ?? '';
-      _selectedSpecializations.addAll(List<String>.from(data['specializations'] ?? []));
+
       setState(() {});
     }
-  }
-
-  Future<void> _loadSpecializations() async {
-    final snapshot =
-        await FirebaseFirestore.instance.collection('law_specializations').get();
-
-    setState(() {
-      _availableSpecializations.addAll(snapshot.docs.map((doc) {
-        return {
-          'id': doc.id,
-          'name': doc['name'],
-        };
-      }));
-    });
   }
 
   Future<void> _saveProfile() async {
@@ -69,7 +52,6 @@ class _LawyerProfileScreenState extends State<LawyerProfileScreen> {
 
     await FirebaseFirestore.instance.collection('users').doc(uid).update({
       'address': _addressController.text.trim(),
-      'specializations': _selectedSpecializations.toSet().toList(),
     });
 
     showCustomSnackBar(context, "✅ Profile updated");
@@ -114,33 +96,6 @@ class _LawyerProfileScreenState extends State<LawyerProfileScreen> {
                     border: OutlineInputBorder(),
                   ),
                 ),
-                const SizedBox(height: 16),
-
-                const Text("Specializations", style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                if (_availableSpecializations.isEmpty)
-                  const Center(child: CircularProgressIndicator())
-                else
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: _availableSpecializations.map((spec) {
-                      final isSelected = _selectedSpecializations.contains(spec['id']);
-                      return FilterChip(
-                        label: Text(spec['name'], style: const TextStyle(fontSize: 13)),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          setState(() {
-                            if (selected) {
-                              _selectedSpecializations.add(spec['id']);
-                            } else {
-                              _selectedSpecializations.remove(spec['id']);
-                            }
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ),
 
                 const Spacer(),
                 const SizedBox(height: 24),

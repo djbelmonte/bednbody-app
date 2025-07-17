@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 
-class LawyerDashboardScreen extends StatefulWidget {
-  const LawyerDashboardScreen({super.key});
+class TherapistDashboardScreen extends StatefulWidget {
+  const TherapistDashboardScreen({super.key});
 
   @override
-  State<LawyerDashboardScreen> createState() => _LawyerDashboardScreenState();
+  State<TherapistDashboardScreen> createState() => _TherapistDashboardScreenState();
 }
 
-class _LawyerDashboardScreenState extends State<LawyerDashboardScreen> {
+class _TherapistDashboardScreenState extends State<TherapistDashboardScreen> {
   Map<String, dynamic>? _consultation;
   Duration _timeRemaining = Duration.zero;
   Timer? _timer;
@@ -29,7 +29,7 @@ class _LawyerDashboardScreenState extends State<LawyerDashboardScreen> {
     final now = DateTime.now();
     final query = await FirebaseFirestore.instance
         .collection('consultations')
-        .where('lawyer', isEqualTo: uid)
+        .where('therapist', isEqualTo: uid)
         .where('consultation_time', isGreaterThan: Timestamp.fromDate(now))
         .orderBy('consultation_time')
         .limit(1)
@@ -143,7 +143,7 @@ class _LawyerDashboardScreenState extends State<LawyerDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Lawyer Dashboard")),
+      appBar: AppBar(title: const Text("Therapist Dashboard")),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

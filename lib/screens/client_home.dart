@@ -34,7 +34,13 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_titles[_selectedIndex]),
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Image.asset(
+            'assets/logo-horizontal.png', // make sure this path is correct in your assets
+            height: 32,
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
