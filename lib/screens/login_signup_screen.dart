@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import 'client_home.dart';
 import 'therapist_home.dart';
@@ -104,8 +105,8 @@ class _AuthScreenState extends State<AuthScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Image.asset(
-                  'assets/logo.png',
-                  height: 250,
+                  'assets/logo-bnb.png',
+                  height: 200,
                 ),
                 Text(
                   _isLogin ? "Welcome Back" : "Create an Account",
@@ -170,7 +171,10 @@ class _AuthScreenState extends State<AuthScreen> {
                 ],
                 const SizedBox(height: 24),
                 _isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? const Center(child: SpinKitFadingCircle(
+                      color: Color(0xFFFFD700), // Gold
+                      size: 30.0,
+                    ))
                     : ElevatedButton(
                         onPressed: _submit,
                         style: ElevatedButton.styleFrom(

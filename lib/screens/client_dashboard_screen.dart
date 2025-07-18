@@ -1,10 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'dart:async';
 
-import 'therapist_preview_screen.dart';
+import 'choose_service_screen.dart';
 
 class ClientDashboardScreen extends StatefulWidget {
   const ClientDashboardScreen({super.key});
@@ -14,232 +12,235 @@ class ClientDashboardScreen extends StatefulWidget {
 }
 
 class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
-  final TextEditingController _searchController = TextEditingController();
-  List<Map<String, dynamic>> _therapistSuggestions = [];
-  bool _isLoading = false;
-
-  Map<String, dynamic>? _consultation;
-  Duration _timeRemaining = Duration.zero;
-  Timer? _timer;
+  String? _firstName;
+  bool _isLoading = true;
+  List<String> _branches = [];
+  String? _selectedBranch;
 
   @override
   void initState() {
     super.initState();
-    _loadConsultation();
+    _fetchUserData();
+    _fetchBranches();
   }
 
-  void _onSearchChanged(String query) async {
-    final search = query.trim().toLowerCase();
+  Future<void> _fetchUserData() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
 
-    if (search.isEmpty) {
-      setState(() {
-        _therapistSuggestions = [];
-        _isLoading = false;
-      });
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    final therapistSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .where('role', isEqualTo: 'therapist')
-        .get();
-
-    final therapists = therapistSnapshot.docs
-        .map((doc) => {
-              'id': doc.id,
-              'fullName':
-                  "${doc['first_name']} ${doc['middle_name']} ${doc['last_name']}".toLowerCase(),
-              'displayName':
-                  "${doc['first_name']} ${doc['middle_name']} ${doc['last_name']}"
-            })
-        .where((therapist) => therapist['fullName']!.contains(search))
-        .toList();
-
-    therapists.sort((a, b) => a['displayName']!.compareTo(b['displayName']!));
-    final topTherapists = therapists.take(3).toList();
-
+    final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
     setState(() {
-      _therapistSuggestions = topTherapists;
+      _firstName = doc['first_name'] ?? 'there';
       _isLoading = false;
     });
   }
 
-  Future<void> _loadConsultation() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-
-    final now = DateTime.now();
-    final query = await FirebaseFirestore.instance
-        .collection('consultations')
-        .where('client', isEqualTo: uid)
-        .where('consultation_time', isGreaterThan: Timestamp.fromDate(now))
-        .orderBy('consultation_time')
-        .limit(1)
-        .get();
-
-    if (query.docs.isNotEmpty) {
-      final data = query.docs.first.data();
-
-      final Timestamp? timestamp = data['consultation_time'];
-      if (timestamp == null) return;
-
-      final consultationTime = timestamp.toDate();
-      _startCountdown(consultationTime);
-
-      setState(() {
-        _consultation = data;
-      });
-    }
-  }
-
-  void _startCountdown(DateTime consultationTime) {
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      final now = DateTime.now();
-      final diff = consultationTime.difference(now);
-      if (diff.isNegative) {
-        _timer?.cancel();
-        setState(() => _timeRemaining = Duration.zero);
-      } else {
-        setState(() => _timeRemaining = diff);
+  Future<void> _fetchBranches() async {
+    final snapshot = await FirebaseFirestore.instance.collection('branches').get();
+    setState(() {
+      _branches = snapshot.docs.map((doc) => doc['name'] as String).toList();
+      if (_branches.isNotEmpty) {
+        _selectedBranch = _branches.first;
       }
     });
   }
 
-  String _formatDuration(Duration duration) {
-    if (duration.inSeconds <= 0) return "Started";
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes % 60;
-    final seconds = duration.inSeconds % 60;
-    return "$hours h $minutes m $seconds s";
-  }
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final hour = DateTime.now().hour;
+    String greeting;
+    if (hour < 12) {
+      greeting = "Good Morning";
+    } else if (hour < 18) {
+      greeting = "Good Afternoon";
+    } else {
+      greeting = "Good Evening";
+    }
 
-  Widget _buildConsultationReminderCard() {
-    if (_consultation == null) {
-      return Card(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(
-            "You don't have any consultations booked yet.",
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ),
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance
-          .collection('users')
-          .doc(_consultation!['therapist']) // assuming this is the UID string
-          .get(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final therapistData = snapshot.data!.data() as Map<String, dynamic>;
-        final therapistName = [
-          therapistData['first_name'],
-          therapistData['middle_name'],
-          therapistData['last_name'],
-        ].where((part) => part != null && part.toString().trim().isNotEmpty).join(' ');
-
-        final notes = _consultation!['notes'] ?? '';
-        final consultationTime = (_consultation!['consultation_time'] as Timestamp).toDate();
-        final formattedTime = DateFormat.yMMMMd().add_jm().format(consultationTime);
-
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text("Upcoming Consultation", style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text("With Atty. $therapistName"),
-                Text("Scheduled on $formattedTime"),
-                Text("Time remaining: ${_formatDuration(_timeRemaining)}"),
-                const SizedBox(height: 8),
-                Text(
-                  "Notes: $notes",
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // 🔍 Search Bar
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: TextField(
-            controller: _searchController,
-            onChanged: _onSearchChanged,
-            decoration: InputDecoration(
-              hintText: "Search by therapist...",
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ),
-
-        // 📅 Reminder Card
-        _buildConsultationReminderCard(),
-
-        if (_isLoading) const CircularProgressIndicator(),
-
-        if (!_isLoading && _therapistSuggestions.isEmpty && _searchController.text.isNotEmpty)
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text("No results found."),
-          ),
-
-        // 👥 Search Suggestions
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+    return Scaffold(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (_therapistSuggestions.isNotEmpty) ...[
-                const Text("Therapists", style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                ..._therapistSuggestions.map((therapist) => ListTile(
-                      leading: const Icon(Icons.person),
-                      title: Text(therapist['displayName']),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => TherapistPreviewScreen(therapistId: therapist['id']),
+              AnimatedOpacity(
+                duration: const Duration(milliseconds: 800),
+                opacity: 1.0,
+                curve: Curves.easeIn,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "$greeting, $_firstName!",
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 28,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      "Welcome back to your wellness space ✨",
+                      style: TextStyle(fontSize: 14, color: Colors.black54),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // 💆‍♀️ Booking Button + Branch Selector
+              
+              Row(
+                children: [
+                  SizedBox(
+                    width: screenWidth * 0.4 - 24,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 16),
+                        backgroundColor: const Color(0xFF0B2F25),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 3,
+                        textStyle: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onPressed: () {
+                        if (_selectedBranch != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ChooseServiceScreen(selectedBranch: _selectedBranch!),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Please select a branch")),
+                          );
+                        }
+                      },
+                      child: const FittedBox(child: Text("Book a Massage")),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: screenWidth * 0.6 - 24,
+                    child: DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        labelText: "Branch",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                      ),
+                      value: _selectedBranch,
+                      isExpanded: true, // ✅ this prevents dropdown width issues
+                      items: _branches.map((branch) {
+                        return DropdownMenuItem<String>(
+                          value: branch,
+                          child: Text(
+                            branch,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            style: const TextStyle(fontSize: 13),
                           ),
                         );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedBranch = value;
+                        });
                       },
-                    )),
-              ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 28),
+
+              // 🧘‍♀️ Premium Quote Section
+              Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                color: const Color(0xFFF1F5F9),
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        "“Relaxation is the art of letting go.”",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: Text(
+                          "— Bednbody Wisdom",
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // 🧑‍💼 Top Therapists
+              Text(
+                "Top Therapists",
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 200,
+                child: PageView(
+                  controller: PageController(viewportFraction: 1),
+                  children: List.generate(3, (index) {
+                    return Container(
+                      margin: const EdgeInsets.only(right: 12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        color: Colors.grey.shade300,
+                        image: const DecorationImage(
+                          image: AssetImage('assets/mock-therapist.jpg'),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
             ],
           ),
         ),
-      ],
+      ),
     );
   }
 }

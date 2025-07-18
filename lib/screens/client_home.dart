@@ -20,7 +20,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   ];
 
   final List<String> _titles = [
-    "Ask an Attorney",
+    "Dashboard",
     "Profile",
   ];
 
@@ -35,10 +35,13 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Image.asset(
-            'assets/logo-horizontal.png', // make sure this path is correct in your assets
-            height: 32,
+          padding: const EdgeInsets.only(left: 8.0), // Add left-only padding
+          child: Center(
+            child: Image.asset(
+              'assets/logo-horizontal.png',
+              fit: BoxFit.contain,
+              height: kToolbarHeight * 0.95, // slightly smaller than AppBar height
+            ),
           ),
         ),
         actions: [
